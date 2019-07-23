@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include "Math/math.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -43,7 +44,7 @@ int main()
 		return -1;
 	}
 
-	// render loop
+	// main render loop
 	// -----------
 	while (!glfwWindowShouldClose(window))
 	{

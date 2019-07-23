@@ -134,6 +134,24 @@
   <ItemGroup>
     <ClCompile Include="..\OpenGLLibraries\Src\glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Math\math.cpp" />
+    <ClCompile Include="Math\matrix2x2.cpp" />
+    <ClCompile Include="Math\matrix3x3.cpp" />
+    <ClCompile Include="Math\matrix4x4.cpp" />
+    <ClCompile Include="Math\vector2d.cpp" />
+    <ClCompile Include="Math\vector3d.cpp" />
+    <ClCompile Include="Math\vector4d.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="gltypes.h" />
+    <ClInclude Include="Math\math.h" />
+    <ClInclude Include="Math\math_constants.h" />
+    <ClInclude Include="Math\matrix2x2.h" />
+    <ClInclude Include="Math\matrix3x3.h" />
+    <ClInclude Include="Math\matrix4x4.h" />
+    <ClInclude Include="Math\vector2d.h" />
+    <ClInclude Include="Math\vector3d.h" />
+    <ClInclude Include="Math\vector4d.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
