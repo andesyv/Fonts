@@ -11,6 +11,8 @@ namespace gsl
 {
 
 class Vector3D;
+class Vector4D;
+typedef Vector4D vec4;
 
 class Vector4D
 {

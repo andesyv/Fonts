@@ -9,6 +9,9 @@
 namespace gsl
 {
 
+class Vector2D;
+typedef Vector2D vec2;
+
 class Vector2D
 {
 public:

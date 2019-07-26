@@ -9,6 +9,10 @@
 namespace gsl
 {
 
+class Vector3D;
+typedef Vector3D vec3;
+typedef Vector3D vec;
+
 class Vector3D
 {
 public:

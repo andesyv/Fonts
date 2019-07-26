@@ -11,7 +11,10 @@ namespace gsl
 {
 
 class Matrix2x2;
+class Matrix3x3;
 class Matrix4x4;
+typedef Matrix3x3 mat3;
+
 
 class Matrix3x3
 {
