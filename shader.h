@@ -15,10 +15,11 @@ private:
 public:
 	std::string mName;
 
-	Shader(std::string vertexPath, std::string fragmentPath, std::string name = generateName());
-	Shader(std::string vertexPath, std::string geometricPath, std::string fragmentPath, std::string name = generateName());
+	Shader(std::string vertexPath, std::string fragmentPath);
+	Shader(std::string vertexPath, std::string geometryPath, std::string fragmentPath);
 
 	GLuint get();
+	Shader& setName(std::string name);
 
 	~Shader();
 };
@@ -37,16 +38,21 @@ private:
 public:
 	static ShaderManager& get();
 
-	/** Template function to just forward multiple arguments
-	 * to the std::make_shared function.
-	 * Arguments are: vertexPath <, geometricPath>, fragmentPath <, name> 
-	 * (ellipsis's are somewhat dangerous)
-	 */
-	template <class... _Types>
-	void add(_Types&& ... args) {
-		mShaders.push_back(std::make_shared<Shader>(args));
-	}
+	void operator= (const ShaderManager& other) = delete;
+
+	// Adds a shader to the shaderManager
+	void add(Shader&& shader);
+	// Adds a shader to the shadermanager and returns a shared_ptr to the shader. (the same as ShaderManager::add but less efficient)
+	std::shared_ptr<Shader> make(Shader&& shader);
+
+	// Searches for shader and returns an empty pointer if not found
 	std::shared_ptr<Shader> find(std::string shaderName);
+	// Searches for shader and returns the default shader if not found
+	std::shared_ptr<Shader> findOrDefault(std::string shaderName);
+	/** Returns the first shader that is added (the default one).
+	 * NB: Will stop the program at runtime if no shaders are found.
+	 */
+	std::shared_ptr<Shader> defaultShader();
 
 	~ShaderManager();
 };

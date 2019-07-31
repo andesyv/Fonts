@@ -48,8 +48,10 @@ int main()
 	// Setup shaders
 	// -------------
 	// PROJECT_DIR is a macro defined in the project settings for visual studio to point to the project base directory path
-	ShaderManager::get().add(std::string{ PROJECT_DIR + std::string{"Shaders\\default.vert" } }, std::string{ PROJECT_DIR + std::string{"Shaders\\default.frag" } }, "default");
-
+	ShaderManager::get().add(std::move(Shader{
+		std::string{ PROJECT_DIR + std::string{"Shaders\\default.vert" } },
+		std::string{ PROJECT_DIR + std::string{"Shaders\\default.frag" } }
+		}.setName("default")));
 
 	// main render loop
 	// -----------

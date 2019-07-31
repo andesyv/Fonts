@@ -19,5 +19,5 @@ void main() {
     vs_out.normal = normAttr;
     vs_out.uv = uvAttr;
 
-    gl_Position = vs_out.fragPos;
+    gl_Position = vec4(vs_out.fragPos, 1);
 }

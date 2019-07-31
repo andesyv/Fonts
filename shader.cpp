@@ -2,12 +2,13 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <cassert>
 
-Shader::Shader(std::string vertexPath, std::string fragmentPath, std::string name) : mName{name}
+Shader::Shader(std::string vertexPath, std::string fragmentPath)
 {
 	// 1. Read shader code:
 	std::ifstream vFileStream, fFileStream;
-	vFileStream.open(vertexPath);
+	vFileStream.open(vertexPath, std::ios_base::in);
 	fFileStream.open(fragmentPath);
 
 	// Print errors:
@@ -29,8 +30,10 @@ Shader::Shader(std::string vertexPath, std::string fragmentPath, std::string nam
 	fFileStream.close();
 
 	// Save contents of files into c strings:
-	const GLchar* vShaderCode = vStrStream.str().c_str();
-	const GLchar* fShaderCode = fStrStream.str().c_str();
+	auto vStr{ vStrStream.str() };
+	auto fStr{ fStrStream.str() };
+	const GLchar* vShaderCode = vStr.c_str();
+	const GLchar* fShaderCode = fStr.c_str();
 
 
 
@@ -80,12 +83,12 @@ Shader::Shader(std::string vertexPath, std::string fragmentPath, std::string nam
 	glDeleteShader(fShader);
 }
 
-Shader::Shader(std::string vertexPath, std::string geometricPath, std::string fragmentPath, std::string name) : mName{ name }
+Shader::Shader(std::string vertexPath, std::string geometryPath, std::string fragmentPath)
 {
 	// 1. Read shader code:
 	std::ifstream vFileStream, gFileStream, fFileStream;
 	vFileStream.open(vertexPath);
-	gFileStream.open(geometricPath);
+	gFileStream.open(geometryPath);
 	fFileStream.open(fragmentPath);
 
 	// Print errors:
@@ -94,7 +97,7 @@ Shader::Shader(std::string vertexPath, std::string geometricPath, std::string fr
 	}
 
 	if (!gFileStream) {
-		std::cout << "ERROR SHADER FILE " << geometricPath << " NOT SUCCESFULLY READ" << std::endl;
+		std::cout << "ERROR SHADER FILE " << geometryPath << " NOT SUCCESFULLY READ" << std::endl;
 	}
 
 	if (!fFileStream) {
@@ -113,9 +116,12 @@ Shader::Shader(std::string vertexPath, std::string geometricPath, std::string fr
 	fFileStream.close();
 
 	// Save contents of files into c strings:
-	const GLchar* vShaderCode = vStrStream.str().c_str();
-	const GLchar* gShaderCode = gStrStream.str().c_str();
-	const GLchar* fShaderCode = fStrStream.str().c_str();
+	auto vStr{ vStrStream.str() };
+	auto gStr{ gStrStream.str() };
+	auto fStr{ fStrStream.str() };
+	const GLchar* vShaderCode = vStr.c_str();
+	const GLchar* gShaderCode = gStr.c_str();
+	const GLchar* fShaderCode = fStr.c_str();
 
 
 
@@ -145,7 +151,7 @@ Shader::Shader(std::string vertexPath, std::string geometricPath, std::string fr
 	glGetShaderiv(gShader, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(gShader, 512, nullptr, infoLog);
-		std::cout << "ERROR GEOMETRY SHADER " << geometricPath << " COMPILATION_FAILED\n" << infoLog << std::endl;
+		std::cout << "ERROR GEOMETRY SHADER " << geometryPath << " COMPILATION_FAILED\n" << infoLog << std::endl;
 	}
 
 	// Fragment shader
@@ -192,6 +198,12 @@ GLuint Shader::get()
 	return mProgram;
 }
 
+Shader& Shader::setName(std::string name)
+{
+	mName = name;
+	return *this;
+}
+
 Shader::~Shader()
 {
 	/// I think this is how you delete shader programs...
@@ -215,6 +227,17 @@ ShaderManager& ShaderManager::get()
 	return instance;
 }
 
+void ShaderManager::add(Shader&& shader)
+{
+	mShaders.push_back(std::make_shared<Shader>(shader));
+}
+
+std::shared_ptr<Shader> ShaderManager::make(Shader&& shader)
+{
+	mShaders.push_back(std::make_shared<Shader>(shader));
+	return mShaders.back();
+}
+
 std::shared_ptr<Shader> ShaderManager::find(std::string shaderName)
 {
 	for (auto shader : mShaders)
@@ -222,6 +245,21 @@ std::shared_ptr<Shader> ShaderManager::find(std::string shaderName)
 			return shader;
 
 	return std::shared_ptr<Shader>{};
+}
+
+std::shared_ptr<Shader> ShaderManager::findOrDefault(std::string shaderName)
+{
+	for (auto shader : mShaders)
+		if (shader->mName == shaderName)
+			return shader;
+
+	return defaultShader();
+}
+
+std::shared_ptr<Shader> ShaderManager::defaultShader()
+{
+	assert(mShaders.size() > 0);
+		return mShaders.front();
 }
 
 ShaderManager::~ShaderManager()

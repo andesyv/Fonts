@@ -9,5 +9,5 @@ in VS_OUT {
 out vec4 fragColor;
 
 void main() {
-    fragColor = normal;
+    fragColor = vec4(fs_in.normal, 1);
 }
