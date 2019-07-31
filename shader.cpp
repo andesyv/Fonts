@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 
-Shader::Shader(const char vertexPath[], const char fragmentPath[])
+Shader::Shader(std::string vertexPath, std::string fragmentPath, std::string name) : mName{name}
 {
 	// 1. Read shader code:
 	std::ifstream vFileStream, fFileStream;
@@ -80,7 +80,7 @@ Shader::Shader(const char vertexPath[], const char fragmentPath[])
 	glDeleteShader(fShader);
 }
 
-Shader::Shader(const char vertexPath[], const char geometricPath[], const char fragmentPath[])
+Shader::Shader(std::string vertexPath, std::string geometricPath, std::string fragmentPath, std::string name) : mName{ name }
 {
 	// 1. Read shader code:
 	std::ifstream vFileStream, gFileStream, fFileStream;
@@ -179,8 +179,56 @@ Shader::Shader(const char vertexPath[], const char geometricPath[], const char f
 	glDeleteShader(fShader);
 }
 
+
+
+std::string Shader::generateName()
+{
+	static unsigned int _id{ 0 };
+	return std::string{ "shader" + _id };
+}
+
+GLuint Shader::get()
+{
+	return mProgram;
+}
+
 Shader::~Shader()
 {
 	/// I think this is how you delete shader programs...
 	glDeleteProgram(mProgram);
+}
+
+
+
+
+//********************* ShaderManager ******************************
+
+ShaderManager::ShaderManager()
+{
+	
+}
+
+ShaderManager& ShaderManager::get()
+{
+	// instance is created only once for the whole program.
+	static ShaderManager instance{};
+	return instance;
+}
+
+std::shared_ptr<Shader> ShaderManager::find(std::string shaderName)
+{
+	for (auto shader : mShaders)
+		if (shader->mName == shaderName)
+			return shader;
+
+	return std::shared_ptr<Shader>{};
+}
+
+ShaderManager::~ShaderManager()
+{
+	std::cout << "Destroying " << mShaders.size() << " shaders" << std::endl;
+	for (auto& item : mShaders)
+		if (item.use_count() != 1)
+			std::cout << "Shader " << item->mName << " is still being managed by another shared pointer." << std::endl;
+
 }

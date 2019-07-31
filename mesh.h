@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <vector>
+#include <array>
 #include "Math/vector2d.h"
 #include "Math/vector3d.h"
 

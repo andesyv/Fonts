@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "Math/math.h"
+#include "shader.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -43,6 +44,12 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+
+	// Setup shaders
+	// -------------
+	// PROJECT_DIR is a macro defined in the project settings for visual studio to point to the project base directory path
+	ShaderManager::get().add(std::string{ PROJECT_DIR + std::string{"Shaders\\default.vert" } }, std::string{ PROJECT_DIR + std::string{"Shaders\\default.frag" } }, "default");
+
 
 	// main render loop
 	// -----------
