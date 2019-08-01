@@ -4,6 +4,7 @@
 #include <iostream>
 #include "Math/math.h"
 #include "shader.h"
+#include "mesh.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -53,6 +54,17 @@ int main()
 		std::string{ PROJECT_DIR + std::string{"Shaders\\default.frag" } }
 		}.setName("default")));
 
+	std::vector<Vertex> vertices{
+		{{-0.5f, -0.5f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f} },
+		{{0.5f, -0.5f, 0.f}, {0.f, 0.f, -1.f}, {1.f, 0.f} },
+		{{0.5f, 0.5f, 0.f}, {0.f, 0.f, -1.f}, {1.f, 1.f} },
+		{{-0.5f, -0.5f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f} },
+		{{0.5f, 0.5f, 0.f}, {0.f, 0.f, -1.f}, {1.f, 1.f} },
+		{{-0.5f, 0.5f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 1.f} }
+	};
+	auto plane = new Mesh{vertices};
+	auto plane2 = new Mesh{ vertices };
+
 	// main render loop
 	// -----------
 	while (!glfwWindowShouldClose(window))
@@ -64,11 +76,20 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		plane->mMaterial.use();
+		plane->draw();
+		plane2->mMaterial.use();
+		plane2->draw();
+
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	// Deallocate resources
+	delete plane;
+	delete plane2;
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------

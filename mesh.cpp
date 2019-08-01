@@ -4,14 +4,14 @@ Vertex::Vertex(gsl::vec3 _xyz, gsl::vec3 _normal, gsl::vec2 _uv) : xyz{ _xyz }, 
 {
 }
 
-Mesh::Mesh()
+Mesh::Mesh(Material material) : mMaterial{material}
 {
 	glGenVertexArrays(1, &mVAO);
 	mEnabledComponents += static_cast<char>(COMPONENT::VAO);
 	glBindVertexArray(mVAO);
 }
 
-Mesh::Mesh(std::vector<Vertex> vertices)
+Mesh::Mesh(std::vector<Vertex> vertices, Material material) : mMaterial{material}
 {
 	glGenVertexArrays(1, &mVAO);
 	mEnabledComponents += static_cast<char>(COMPONENT::VAO);
@@ -35,7 +35,7 @@ Mesh::Mesh(std::vector<Vertex> vertices)
 	glEnableVertexAttribArray(2);
 }
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<std::array<int, 3>> indices)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<std::array<int, 3>> indices, Material material) : mMaterial{material}
 {
 	glGenVertexArrays(1, &mVAO);
 	mEnabledComponents += static_cast<char>(COMPONENT::VAO);

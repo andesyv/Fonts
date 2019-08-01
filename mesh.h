@@ -4,6 +4,7 @@
 #include <array>
 #include "Math/vector2d.h"
 #include "Math/vector3d.h"
+#include "material.h"
 
 struct Vertex {
 	gsl::vec3 xyz;
@@ -32,15 +33,15 @@ private:
 
 public:
 	GLuint mVAO;
+	Material mMaterial;
 	GLenum mDrawMode{ GL_TRIANGLES };
 
-	Mesh();
-	Mesh(std::vector<Vertex> vertices);
-	Mesh(std::vector<Vertex> vertices, std::vector<std::array<int, 3>> indices);
+	Mesh(Material material = Material{});
+	Mesh(std::vector<Vertex> vertices, Material material = Material{});
+	Mesh(std::vector<Vertex> vertices, std::vector<std::array<int, 3>> indices, Material material = Material{});
 
 	void draw() const;
 
 	~Mesh();
-
 };
 
