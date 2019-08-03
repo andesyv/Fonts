@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 in VS_OUT {
     vec3 fragPos;
@@ -9,5 +9,5 @@ in VS_OUT {
 out vec4 fragColor;
 
 void main() {
-    fragColor = vec4(vec3(1, 0, 0), 1);
+    fragColor = vec4(vec3(fs_in.uv, 0), 1);
 }

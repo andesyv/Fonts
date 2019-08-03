@@ -4,14 +4,16 @@ Vertex::Vertex(gsl::vec3 _xyz, gsl::vec3 _normal, gsl::vec2 _uv) : xyz{ _xyz }, 
 {
 }
 
-Mesh::Mesh(Material material) : mMaterial{material}
+Mesh::Mesh(Material material)
+	: mMaterial{ material }
 {
 	glGenVertexArrays(1, &mVAO);
 	mEnabledComponents += static_cast<char>(COMPONENT::VAO);
 	glBindVertexArray(mVAO);
 }
 
-Mesh::Mesh(std::vector<Vertex> vertices, Material material) : mMaterial{material}
+Mesh::Mesh(std::vector<Vertex> vertices, Material material)
+	: mMaterial{material}, mVertexCount{static_cast<unsigned int>(vertices.size())}
 {
 	glGenVertexArrays(1, &mVAO);
 	mEnabledComponents += static_cast<char>(COMPONENT::VAO);
@@ -21,21 +23,22 @@ Mesh::Mesh(std::vector<Vertex> vertices, Material material) : mMaterial{material
 	mEnabledComponents += static_cast<char>(COMPONENT::VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, mVBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-
+	
 	// First attribute pointer: vertices
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(0));
 	glEnableVertexAttribArray(0);
 	
 	// Second attribute pointer: normals
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(gsl::vec3) * 3));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(GLfloat) * 3));
 	glEnableVertexAttribArray(1);
 
 	// Thir attribute pointer: uvs
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(gsl::vec3) * 6));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(GLfloat) * 6));
 	glEnableVertexAttribArray(2);
 }
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<std::array<int, 3>> indices, Material material) : mMaterial{material}
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<std::array<int, 3>> indices, Material material)
+	: mMaterial{material}, mVertexCount{static_cast<unsigned int>(vertices.size())}
 {
 	glGenVertexArrays(1, &mVAO);
 	mEnabledComponents += static_cast<char>(COMPONENT::VAO);

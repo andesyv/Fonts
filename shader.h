@@ -9,14 +9,23 @@ class Shader
 {
 private:
 	GLuint mProgram;
+	// For use by move semantics
+	// (keeps order of who "owns" the shaderprogram so that
+	// it doesn't get destroyed by anybody else but the owner)
+	bool mOwner{ false };
 
 	static std::string generateName();
 
 public:
 	std::string mName;
 
+	Shader(const Shader& other);
+	Shader(Shader&& other);
 	Shader(std::string vertexPath, std::string fragmentPath);
 	Shader(std::string vertexPath, std::string geometryPath, std::string fragmentPath);
+
+	Shader& operator= (const Shader& other);
+	Shader& operator= (Shader&& other);
 
 	GLuint get();
 	Shader& setName(std::string name);
@@ -42,7 +51,8 @@ public:
 
 	// Adds a shader to the shaderManager
 	void add(Shader&& shader);
-	// Adds a shader to the shadermanager and returns a shared_ptr to the shader. (the same as ShaderManager::add but less efficient)
+	// Adds a shader to the shadermanager and returns a shared_ptr to the shader.
+	// (the same as ShaderManager::add but less efficient)
 	std::shared_ptr<Shader> make(Shader&& shader);
 
 	// Searches for shader and returns an empty pointer if not found

@@ -26,14 +26,14 @@ private:
 	// Which variables are in use (initialized)
 	char mEnabledComponents{ 0 };
 
-	GLuint mVBO;
-	GLuint mEBO;
+	GLuint mVBO{ 0 };
+	GLuint mEBO{ 0 };
 	unsigned int mVertexCount{ 0 };
 	unsigned int mIndexCount{ 0 };
 
 public:
-	GLuint mVAO;
-	Material mMaterial;
+	GLuint mVAO{ 0 };
+	Material mMaterial{};
 	GLenum mDrawMode{ GL_TRIANGLES };
 
 	Mesh(Material material = Material{});

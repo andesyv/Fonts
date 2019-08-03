@@ -4,12 +4,23 @@
 #include <sstream>
 #include <cassert>
 
+Shader::Shader(const Shader& other) : mProgram{ other.mProgram }, mOwner{ false }
+{
+
+}
+
+Shader::Shader(Shader&& other) : mProgram{ other.mProgram }, mOwner{ true }
+{
+	// Old shader isn't the owner anymore, so they won't delete it.
+	other.mOwner = false;
+}
+
 Shader::Shader(std::string vertexPath, std::string fragmentPath)
 {
 	// 1. Read shader code:
 	std::ifstream vFileStream, fFileStream;
 	vFileStream.open(vertexPath, std::ios_base::in);
-	fFileStream.open(fragmentPath);
+	fFileStream.open(fragmentPath, std::ios_base::in);
 
 	// Print errors:
 	if (!vFileStream) {
@@ -67,6 +78,8 @@ Shader::Shader(std::string vertexPath, std::string fragmentPath)
 	}
 
 	mProgram = glCreateProgram();
+	if (mProgram == 0)
+		std::cout << "Something wen't wrong during making of shader!" << std::endl;
 	glAttachShader(mProgram, vShader);
 	glAttachShader(mProgram, fShader);
 	glLinkProgram(mProgram);
@@ -81,6 +94,8 @@ Shader::Shader(std::string vertexPath, std::string fragmentPath)
 	// Delete vertex and fragment shaders as they aren't needed anymore:
 	glDeleteShader(vShader);
 	glDeleteShader(fShader);
+
+	mOwner = true;
 }
 
 Shader::Shader(std::string vertexPath, std::string geometryPath, std::string fragmentPath)
@@ -167,6 +182,8 @@ Shader::Shader(std::string vertexPath, std::string geometryPath, std::string fra
 	}
 
 	mProgram = glCreateProgram();
+	if (mProgram == 0)
+		std::cout << "Something wen't wrong during making of shader!" << std::endl;
 	glAttachShader(mProgram, vShader);
 	glAttachShader(mProgram, gShader);
 	glAttachShader(mProgram, fShader);
@@ -183,6 +200,25 @@ Shader::Shader(std::string vertexPath, std::string geometryPath, std::string fra
 	glDeleteShader(vShader);
 	glDeleteShader(gShader);
 	glDeleteShader(fShader);
+
+	mOwner = true;
+}
+
+Shader& Shader::operator=(const Shader& other)
+{
+	mProgram = other.mProgram;
+	mOwner = false;
+
+	return *this;
+}
+
+Shader& Shader::operator=(Shader&& other)
+{
+	mProgram = other.mProgram;
+	mOwner = true;
+	other.mOwner = false;
+
+	return *this;
 }
 
 
@@ -207,7 +243,8 @@ Shader& Shader::setName(std::string name)
 Shader::~Shader()
 {
 	/// I think this is how you delete shader programs...
-	glDeleteProgram(mProgram);
+	if (mOwner)
+		glDeleteProgram(mProgram);
 }
 
 
@@ -229,12 +266,18 @@ ShaderManager& ShaderManager::get()
 
 void ShaderManager::add(Shader&& shader)
 {
-	mShaders.push_back(std::make_shared<Shader>(shader));
+	// Moving the object from a temporary object to a object on the heap
+	Shader *shaderPtr = new Shader{ std::move(shader) };
+	// Placing the heap pointer in a shared ptr in the shader list
+	mShaders.push_back(std::shared_ptr<Shader>{shaderPtr});
 }
 
 std::shared_ptr<Shader> ShaderManager::make(Shader&& shader)
 {
-	mShaders.push_back(std::make_shared<Shader>(shader));
+	// Moving the object from a temporary object to a object on the heap
+	Shader* shaderPtr = new Shader{ std::move(shader) };
+	// Placing the heap pointer in a shared ptr in the shader list
+	mShaders.push_back(std::shared_ptr<Shader>{shaderPtr});
 	return mShaders.back();
 }
 
