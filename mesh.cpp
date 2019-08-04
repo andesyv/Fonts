@@ -94,6 +94,26 @@ void Mesh::draw() const
 	}
 }
 
+bool Mesh::operator<(const Mesh& other) const
+{
+	return mMaterial < other.mMaterial;
+}
+
+bool Mesh::operator>(const Mesh& other) const
+{
+	return mMaterial > other.mMaterial;
+}
+
+bool Mesh::operator<=(const Mesh& other) const
+{
+	return !(*this < other);
+}
+
+bool Mesh::operator>=(const Mesh& other) const
+{
+	return !(*this > other);
+}
+
 Mesh::~Mesh()
 {
 	if (mEnabledComponents & static_cast<char>(COMPONENT::EBO))

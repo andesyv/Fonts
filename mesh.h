@@ -42,6 +42,11 @@ public:
 
 	void draw() const;
 
+	bool operator< (const Mesh& other) const;
+	bool operator> (const Mesh& other) const;
+	bool operator<= (const Mesh& other) const;
+	bool operator>= (const Mesh& other) const;
+
 	~Mesh();
 };
 

@@ -23,5 +23,10 @@ public:
 	// Is this material using the same shader as the last material?
 	bool sameShaderAsLastMaterial() const;
 
+	bool operator< (const Material& other) const;
+	bool operator> (const Material& other) const;
+	bool operator>= (const Material& other) const;
+	bool operator<= (const Material& other) const;
+
 };
 

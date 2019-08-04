@@ -2,12 +2,14 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <set>
 #include "Math/math.h"
 #include "shader.h"
 #include "mesh.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+void checkForErrors();
 void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
 	GLsizei length, const GLchar* message, const void* userParam);
 
@@ -79,8 +81,7 @@ int main()
 		{ PROJECT_DIR + std::string{"Shaders\\default.frag" } }
 		}.setName("default")));
 
-	// Activate shader once to prevent errors when binding to attrib pointers and such
-	glUseProgram(ShaderManager::get().defaultShader()->get());
+	std::vector<std::shared_ptr<Mesh>> gameObjects{};
 
 	std::vector<Vertex> vertices{
 		{{-0.5f, -0.5f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f} },
@@ -91,8 +92,29 @@ int main()
 		{{-0.5f, 0.5f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 1.f} }
 	};
 
-	auto plane = new Mesh{ vertices, Material{} };
-	plane->mDrawMode = GL_TRIANGLES;
+	gameObjects.push_back(std::make_shared<Mesh>(vertices, Material{} ));
+	gameObjects.back()->mDrawMode = GL_TRIANGLES;
+
+
+
+	struct comparitor {
+		bool operator() (const std::weak_ptr<Mesh>& a, const std::weak_ptr<Mesh>& b)
+		{
+			if (a.expired() || b.expired())
+				return false;
+			return a.lock()->mMaterial < b.lock()->mMaterial;
+		}
+	};
+	// Make a set that is sorted
+	std::multiset<std::weak_ptr<Mesh>, comparitor> sortedGameobjects{gameObjects.begin(), gameObjects.end()};
+	/*[](const std::weak_ptr<Mesh>& a, const std::weak_ptr<Mesh>& b) -> bool
+	{
+		if (a.expired() || b.expired())
+			return false;
+		return a.lock()->mMaterial < b.lock()->mMaterial;
+	}*/
+
+
 
 	// main render loop
 	// -----------
@@ -105,25 +127,25 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		plane->mMaterial.use();
-		plane->draw();
-
-		if (noDebugger) {
-			// Check for errors (slow way for opengl < 4.3):
-			// (Should be removed in release)
-			while (GLenum err = glGetError() != GL_NO_ERROR) {
-				std::string error{};
-				switch (err) {
-				case GL_INVALID_ENUM:					error = "INVALID_ENUM"; break;
-				case GL_INVALID_VALUE:					error = "INVALID_VALUE"; break;
-				case GL_INVALID_OPERATION:				error = "INVALID_OPERATION"; break;
-				case GL_OUT_OF_MEMORY:					error = "OUT_OF_MEMORY"; break;
-				case GL_INVALID_FRAMEBUFFER_OPERATION:	error = "INVALID_FRAMEBUFFER_OPERATION"; break;
-				default:								error = "UNKNOWN_ERROR"; break;
-				}
-				std::cout << "Error: " << error << std::endl;
+ 
+		// Draw all gameobjects
+		for (const auto &ptr : sortedGameobjects) {
+			if (ptr.expired()) {
+				std::cout << "Skipped an item because it was expired!" << std::endl;
+				// Should add some garbage collection on the expired pointers in the future
+				// Probably just remake the set if a certain number of pointers are expired
+				continue;
 			}
+			auto obj = ptr.lock();
+
+			obj->mMaterial.use();
+			obj->draw();
 		}
+
+
+		// Use old debugging if debugger is disabled
+		if (noDebugger)
+			checkForErrors();
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
@@ -131,13 +153,28 @@ int main()
 		glfwPollEvents();
 	}
 
-	// Deallocate resources
-	delete plane;
-
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
 	glfwTerminate();
 	return 0;
+}
+
+void checkForErrors()
+{
+	// Check for errors (slow way for opengl < 4.3):
+	// (Should be removed in release)
+	while (GLenum err = glGetError() != GL_NO_ERROR) {
+		std::string error{};
+		switch (err) {
+		case GL_INVALID_ENUM:					error = "INVALID_ENUM"; break;
+		case GL_INVALID_VALUE:					error = "INVALID_VALUE"; break;
+		case GL_INVALID_OPERATION:				error = "INVALID_OPERATION"; break;
+		case GL_OUT_OF_MEMORY:					error = "OUT_OF_MEMORY"; break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:	error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+		default:								error = "UNKNOWN_ERROR"; break;
+		}
+		std::cout << "Error: " << error << std::endl;
+	}
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly

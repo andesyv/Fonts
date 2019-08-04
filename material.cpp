@@ -32,3 +32,23 @@ bool Material::sameShaderAsLastMaterial() const
 {
 	return mSameShader;
 }
+
+bool Material::operator<(const Material& other) const
+{
+	return mShader->get() < other.mShader->get();
+}
+
+bool Material::operator>(const Material& other) const
+{
+	return mShader->get() > other.mShader->get();
+}
+
+bool Material::operator>=(const Material& other) const
+{
+	return !(*this < other);
+}
+
+bool Material::operator<=(const Material& other) const
+{
+	return !(*this > other);
+}
