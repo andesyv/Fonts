@@ -14,6 +14,6 @@ uniform vec3 textColor = vec3(1, 1, 1);
 out vec4 fragColor;
 
 void main() {
-    float alpha = texture(letter, fs_in.uv).r;
+    float alpha = texture(letter, uvScale * fs_in.uv + uvPos).r;
     fragColor = vec4(textColor, alpha);
 }

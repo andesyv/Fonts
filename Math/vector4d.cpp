@@ -248,4 +248,24 @@ namespace gsl
         return Vector3D(x, y, z);
     }
 
+	GLfloat* Vector4D::xP()
+	{
+		return &x;
+	}
+
+	GLfloat* Vector4D::yP()
+	{
+		return &y;
+	}
+
+	GLfloat* Vector4D::zP()
+	{
+		return &z;
+	}
+
+	GLfloat* Vector4D::wP()
+	{
+		return &w;
+	}
+
 } //namespace

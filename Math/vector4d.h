@@ -81,6 +81,11 @@ public:
 
     Vector3D getXYZ() const;
 
+	GLfloat* xP();
+	GLfloat* yP();
+	GLfloat* zP();
+	GLfloat* wP();
+
     //Friend functions
     friend std::ostream& operator<<(std::ostream &output, const Vector4D &rhs )
     {

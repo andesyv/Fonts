@@ -138,7 +138,6 @@ int main()
 	gameObjects.push_back(std::make_shared<Mesh>(vertices, Material{ "text" }));
 	gameObjects.back()->mDrawMode = GL_TRIANGLES;
 	gameObjects.back()->mMaterial.enableParams(Material::PARAM::TEXTURE | Material::PARAM::UVPOS | Material::PARAM::UVSCALE);
-	gameObjects.back()->mMaterial.mTextureID = Characters['g'].TextureID;
 
 	struct comparitor {
 		bool operator() (const std::weak_ptr<Mesh>& a, const std::weak_ptr<Mesh>& b)
@@ -176,18 +175,32 @@ int main()
 
  
 		// Draw all gameobjects
-		for (const auto &ptr : sortedGameobjects) {
-			if (ptr.expired()) {
-				std::cout << "Skipped an item because it was expired!" << std::endl;
-				// Should add some garbage collection on the expired pointers in the future
-				// Probably just remake the set if a certain number of pointers are expired
-				continue;
-			}
-			auto obj = ptr.lock();
+		//for (const auto &ptr : sortedGameobjects) {
+		//	if (ptr.expired()) {
+		//		std::cout << "Skipped an item because it was expired!" << std::endl;
+		//		// Should add some garbage collection on the expired pointers in the future
+		//		// Probably just remake the set if a certain number of pointers are expired
+		//		continue;
+		//	}
+		//	auto obj = ptr.lock();
 
-			obj->mMaterial.use();
-			obj->draw();
-		}
+		//	obj->mMaterial.use();
+		//	obj->draw();
+		//}
+
+		auto object = gameObjects.back();
+		object->mMaterial.mTextureID = Characters['g'].TextureID;
+		object->mMaterial.mUVScale = gsl::vec2{2.f, 2.f};
+		object->mMaterial.mUVPos = gsl::vec2{ 0.f, 0.f};
+		object->mMaterial.use();
+		object->draw();
+
+		object->mMaterial.mTextureID = Characters['t'].TextureID;
+		object->mMaterial.mUVScale = gsl::vec2{ 2.f, 2.f };
+		object->mMaterial.mUVPos = gsl::vec2{ -1.f, 0.f };
+		object->mMaterial.use();
+		object->draw();
+
 		// glUniform3fv(glGetUniformLocation(3, ""), 1, )
 		// std::cout << "FPS: " << calculateFramerate(renderTime + deltaTime) << std::endl;
 
@@ -253,8 +266,10 @@ void loadCharacters()
 			face->glyph->bitmap.buffer
 		);
 		// Set texture options
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		gsl::vec4 borderColor{ 0.f, 0.f, 0.f, 1.f };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor.xP());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		// Now store character for later use
