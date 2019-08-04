@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <cstdarg>
+#include <map>
 
 class Shader
 {
@@ -15,6 +15,7 @@ private:
 	bool mOwner{ false };
 
 	static std::string generateName();
+	std::map<std::string, GLint> uniformMappings;
 
 public:
 	std::string mName;
@@ -29,6 +30,15 @@ public:
 
 	GLuint get();
 	Shader& setName(std::string name);
+	
+	// Uniforms
+	// (Although I did just use a lot of time to make these functions I don't think they should
+	// be used as they might be slower than just looking up the uniform location each time)
+	bool setInt(std::string uniformName, GLint value);
+	bool setFloat(std::string uniformName, GLfloat value);
+	bool setVec2(std::string uniformName, GLsizei count, const GLfloat* value);
+	bool setVec3(std::string uniformName, GLsizei count, const GLfloat* value);
+	bool setMat4(std::string uniformName, GLsizei count, GLboolean transpose, const GLfloat* value);
 
 	~Shader();
 };

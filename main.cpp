@@ -3,21 +3,43 @@
 
 #include <iostream>
 #include <set>
+#include <map>
+#include <chrono>
 #include "Math/math.h"
 #include "shader.h"
 #include "mesh.h"
 
+// FreeType: Font building library
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void checkForErrors();
+void loadCharacters();
+#ifdef _DEBUG
+void setupDebugger();
 void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
 	GLsizei length, const GLchar* message, const void* userParam);
+#endif
+float calculateFramerate(double deltaTime);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 bool noDebugger{ false };
+
+struct Character {
+	GLuint TextureID;	// ID handle of the glyph texture
+	GLuint Width;		// Width of glyph
+	GLuint Height;		// Height of glyph
+	GLint BearingX;	// OffsetX from baseline to left of glyph
+	GLint BearingY;	// OffsetY from baseline to top of glyph
+	GLint Advance;		// Offset to advance to next glyph
+};
+
+std::map<GLchar, Character> Characters;
 
 int main()
 {
@@ -33,11 +55,13 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); // Debugging context: Comment out when in release
+	#ifdef _DEBUG
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE); // Debugging context: Comment out when in release
+	#endif
 
-#ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
-#endif
+	#ifdef __APPLE__
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
+	#endif
 
 	// glfw window creation
 	// --------------------
@@ -59,19 +83,9 @@ int main()
 		return -1;
 	}
 
-	GLint flags;
-	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
-	{
-		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(glDebugOutput, nullptr);
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-	}
-	else
-	{
-		noDebugger = true;
-	}
+	#ifdef _DEBUG
+		setupDebugger();
+	#endif
 
 	// Setup shaders
 	// -------------
@@ -80,7 +94,35 @@ int main()
 		{ PROJECT_DIR + std::string{"Shaders\\default.vert" } },
 		{ PROJECT_DIR + std::string{"Shaders\\default.frag" } }
 		}.setName("default")));
+	ShaderManager::get().add(std::move(Shader{
+		{ PROJECT_DIR + std::string{"Shaders\\default.vert"} },
+		{ PROJECT_DIR + std::string{"Shaders\\text.frag"} }
+		}.setName("text")));
 
+
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Fonts
+	// ----------
+	loadCharacters();
+
+
+
+	// Timinigs
+	// ----------
+	// Time it took to render last frame
+	double renderTime{ 0.0 };
+	// Time between last frame.
+	double deltaTime{ 0.0 };
+	std::chrono::high_resolution_clock::time_point frameStart;
+	std::chrono::high_resolution_clock::time_point frameStop;
+
+
+
+	// Gameobjects
+	// ----------------
 	std::vector<std::shared_ptr<Mesh>> gameObjects{};
 
 	std::vector<Vertex> vertices{
@@ -92,10 +134,11 @@ int main()
 		{{-0.5f, 0.5f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 1.f} }
 	};
 
-	gameObjects.push_back(std::make_shared<Mesh>(vertices, Material{} ));
+	// Plane
+	gameObjects.push_back(std::make_shared<Mesh>(vertices, Material{ "text" }));
 	gameObjects.back()->mDrawMode = GL_TRIANGLES;
-
-
+	gameObjects.back()->mMaterial.enableParams(Material::PARAM::TEXTURE | Material::PARAM::UVPOS | Material::PARAM::UVSCALE);
+	gameObjects.back()->mMaterial.mTextureID = Characters['g'].TextureID;
 
 	struct comparitor {
 		bool operator() (const std::weak_ptr<Mesh>& a, const std::weak_ptr<Mesh>& b)
@@ -106,7 +149,7 @@ int main()
 		}
 	};
 	// Make a set that is sorted
-	std::multiset<std::weak_ptr<Mesh>, comparitor> sortedGameobjects{gameObjects.begin(), gameObjects.end()};
+	std::multiset<std::weak_ptr<Mesh>, comparitor> sortedGameobjects{ gameObjects.begin(), gameObjects.end() };
 	/*[](const std::weak_ptr<Mesh>& a, const std::weak_ptr<Mesh>& b) -> bool
 	{
 		if (a.expired() || b.expired())
@@ -120,6 +163,10 @@ int main()
 	// -----------
 	while (!glfwWindowShouldClose(window))
 	{
+		// The time point of the framestart
+		frameStart = std::chrono::high_resolution_clock::now();
+		deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(frameStart - frameStop).count() / 1000000000.0;
+
 		// input
 		// -----
 		processInput(window);
@@ -141,6 +188,8 @@ int main()
 			obj->mMaterial.use();
 			obj->draw();
 		}
+		// glUniform3fv(glGetUniformLocation(3, ""), 1, )
+		// std::cout << "FPS: " << calculateFramerate(renderTime + deltaTime) << std::endl;
 
 
 		// Use old debugging if debugger is disabled
@@ -151,12 +200,77 @@ int main()
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		// The time point of the framestart
+		frameStop = std::chrono::high_resolution_clock::now();
+
+		renderTime = std::chrono::duration_cast<std::chrono::nanoseconds>(frameStop - frameStart).count() / 1000000000.0;
 	}
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
 	glfwTerminate();
 	return 0;
+}
+
+void loadCharacters()
+{
+	FT_Library ft;
+	if (FT_Init_FreeType(&ft))
+		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+
+	FT_Face face;
+	if (FT_New_Face(ft, "Fonts/consola.ttf", 0, &face))
+		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+
+	// Font size
+	FT_Set_Pixel_Sizes(face, 0, 48);
+
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Disable byte-alignment restriction
+
+	for (GLubyte c = 0; c < 128; c++)
+	{
+		// Load character glyph 
+		if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+		{
+			std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+			continue;
+		}
+		// Generate texture
+		GLuint texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_RED,
+			face->glyph->bitmap.width,
+			face->glyph->bitmap.rows,
+			0,
+			GL_RED,
+			GL_UNSIGNED_BYTE,
+			face->glyph->bitmap.buffer
+		);
+		// Set texture options
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		// Now store character for later use
+		Character character = {
+			texture,
+			face->glyph->bitmap.width,
+			face->glyph->bitmap.rows,
+			face->glyph->bitmap_left,
+			face->glyph->bitmap_top,
+			face->glyph->advance.x
+		};
+		Characters.insert(std::pair<GLchar, Character>(c, character));
+	}
+
+	FT_Done_Face(face);
+	FT_Done_FreeType(ft);
 }
 
 void checkForErrors()
@@ -192,6 +306,24 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	// make sure the viewport matches the new window dimensions; note that width and 
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
+}
+
+#ifdef _DEBUG
+void setupDebugger()
+{
+	GLint flags;
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+	{
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(glDebugOutput, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+	}
+	else
+	{
+		noDebugger = true;
+	}
 }
 
 void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
@@ -234,4 +366,10 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severi
 	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
 	} std::cout << std::endl;
 	std::cout << std::endl;
+}
+#endif
+
+float calculateFramerate(double deltaTime)
+{
+	return static_cast<float>(1.0 / deltaTime);
 }

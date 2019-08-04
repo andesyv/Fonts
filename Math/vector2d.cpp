@@ -122,4 +122,13 @@ namespace gsl
     {
         y = value;
     }
+	GLfloat* Vector2D::xP()
+	{
+		return &x;
+	}
+
+	GLfloat* Vector2D::yP()
+	{
+		return &y;
+	}
 } //namespace

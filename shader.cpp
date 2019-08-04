@@ -4,12 +4,12 @@
 #include <sstream>
 #include <cassert>
 
-Shader::Shader(const Shader& other) : mProgram{ other.mProgram }, mOwner{ false }
+Shader::Shader(const Shader& other) : mProgram{ other.mProgram }, mName{ other.mName }, mOwner{ false }
 {
 
 }
 
-Shader::Shader(Shader&& other) : mProgram{ other.mProgram }, mOwner{ true }
+Shader::Shader(Shader&& other) : mProgram{ other.mProgram }, mName{ other.mName }, mOwner{ true }
 {
 	// Old shader isn't the owner anymore, so they won't delete it.
 	other.mOwner = false;
@@ -207,6 +207,7 @@ Shader::Shader(std::string vertexPath, std::string geometryPath, std::string fra
 Shader& Shader::operator=(const Shader& other)
 {
 	mProgram = other.mProgram;
+	mName = other.mName;
 	mOwner = false;
 
 	return *this;
@@ -215,6 +216,7 @@ Shader& Shader::operator=(const Shader& other)
 Shader& Shader::operator=(Shader&& other)
 {
 	mProgram = other.mProgram;
+	mName = other.mName;
 	mOwner = true;
 	other.mOwner = false;
 
@@ -238,6 +240,100 @@ Shader& Shader::setName(std::string name)
 {
 	mName = name;
 	return *this;
+}
+
+bool Shader::setInt(std::string uniformName, GLint value)
+{
+	GLint uniform{ -1 };
+	if (!uniformMappings.contains(uniformName)) {
+		uniform = glGetUniformLocation(mProgram, uniformName.c_str());
+		uniformMappings.insert({ uniformName, uniform });
+	} else {
+		uniform = uniformMappings[uniformName];
+	}
+
+	if (-1 < uniform)
+		return false;
+
+	glUniform1i(uniform, value);
+
+	return true;
+}
+
+bool Shader::setFloat(std::string uniformName, GLfloat value)
+{
+	GLint uniform{ -1 };
+	if (!uniformMappings.contains(uniformName)) {
+		uniform = glGetUniformLocation(mProgram, uniformName.c_str());
+		uniformMappings.insert({ uniformName, uniform });
+	}
+	else {
+		uniform = uniformMappings[uniformName];
+	}
+
+	if (-1 < uniform)
+		return false;
+
+	glUniform1f(uniform, value);
+
+	return true;
+}
+
+bool Shader::setVec2(std::string uniformName, GLsizei count, const GLfloat* value)
+{
+	GLint uniform{ -1 };
+	if (!uniformMappings.contains(uniformName)) {
+		uniform = glGetUniformLocation(mProgram, uniformName.c_str());
+		uniformMappings.insert({ uniformName, uniform });
+	}
+	else {
+		uniform = uniformMappings[uniformName];
+	}
+
+	if (-1 < uniform)
+		return false;
+
+	glUniform2fv(uniform, count, value);
+
+	return true;
+}
+
+bool Shader::setVec3(std::string uniformName, GLsizei count, const GLfloat* value)
+{
+	GLint uniform{ -1 };
+	if (!uniformMappings.contains(uniformName)) {
+		uniform = glGetUniformLocation(mProgram, uniformName.c_str());
+		uniformMappings.insert({ uniformName, uniform });
+	}
+	else {
+		uniform = uniformMappings[uniformName];
+	}
+
+	if (-1 < uniform)
+		return false;
+
+	glUniform3fv(uniform, count, value);
+
+	return true;
+}
+
+bool Shader::setMat4(std::string uniformName, GLsizei count, GLboolean transpose, const GLfloat* value)
+{
+	GLint uniform{ -1 };
+	if (!uniformMappings.contains(uniformName)) {
+		uniform = glGetUniformLocation(mProgram, uniformName.c_str());
+		uniformMappings.insert({ uniformName, uniform });
+	}
+	else {
+		uniform = uniformMappings[uniformName];
+	}
+
+	if (-1 < uniform)
+		return false;
+
+	glUniformMatrix4fv(uniform, count, transpose, value);
+
+	return true;
 }
 
 Shader::~Shader()

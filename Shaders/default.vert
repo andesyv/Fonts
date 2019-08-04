@@ -4,9 +4,9 @@ layout(location = 0) in vec3 posAttr;
 layout(location = 1) in vec3 normAttr;
 layout(location = 2) in vec2 uvAttr;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+// uniform mat4 model;
+// uniform mat4 view;
+// uniform mat4 projection;
 
 out VS_OUT {
     vec3 fragPos;
