@@ -109,7 +109,7 @@ int main()
 	// ----------
 	// loadCharacters();
 	Text coolText{};
-	coolText.generateTextureAtlas();
+	// coolText.generateTextureAtlas("calibri");
 
 	//coolText.load({ PROJECT_DIR + std::string{"Textures\\hund.bmp" } });
 	

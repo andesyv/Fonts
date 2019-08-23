@@ -1,5 +1,7 @@
 #include "text.h"
 #include <iostream>
+#include <iomanip>
+#include <fstream>
 #include "Math/vector4d.h"
 
 // FreeType: Font building library
@@ -12,7 +14,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-Text::Text()
+Text::Text(std::string font)
 {
 	if (mMaterial.mShader->mName != "text") {
 		auto shader = ShaderManager::get().find("text");
@@ -26,6 +28,7 @@ Text::Text()
 	}
 	mMaterial.enableParams(Material::PARAM::COLOR);
 
+	// Setup drawing plane
 	glGenVertexArrays(1, &mVAO);
 	glBindVertexArray(mVAO);
 
@@ -39,6 +42,43 @@ Text::Text()
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+
+	// Texture setup
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &mCharTexAtlas);
+	glBindTexture(GL_TEXTURE_2D, mCharTexAtlas);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Disable byte-alignment restriction
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	if (isFontInFile(font)) {
+		readFromFile();
+	} else {
+		generateTextureAtlas(font);
+	}
+}
+
+bool Text::isFontInFile(std::string font)
+{
+	/// Read character data:
+	std::ifstream inf{ "Fonts\\fontData.dat", std::ios::in };
+	if (!inf) {
+		return false;
+	}
+
+	std::string fontName;
+
+	// Read in fontname from top of file
+	inf >> fontName;
+
+	inf.close();
+
+	return caseInSensStringCompare(font, fontName);
 }
 
 void Text::setTextColor(gsl::vec4 color)
@@ -48,6 +88,9 @@ void Text::setTextColor(gsl::vec4 color)
 
 void Text::generateTextureAtlas(std::string fontName)
 {
+	mFontName = fontName;
+	std::cout << "Generating font atlas from file." << std::endl;
+
 	std::string fontPath{ "Fonts/" + fontName + ".ttf" };
 
 	FT_Library ft;
@@ -61,9 +104,6 @@ void Text::generateTextureAtlas(std::string fontName)
 	// Font size
 	if (FT_Set_Pixel_Sizes(face, 0, 48))
 		std::cout << "ERROR::FREETYPE: Failed to set pixel sizes" << std::endl;
-
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Disable byte-alignment restriction
 
 	unsigned int totalWidth{ 0 }, maxHeight{ 0 }, maxWidth{ 0 }, numChars{ 0 };
 	for (char c = 32; c < 127; c++)
@@ -90,17 +130,7 @@ void Text::generateTextureAtlas(std::string fontName)
 		totalWidth += glyph.Width;
 	}*/
 
-	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &mCharTexAtlas);
 	glBindTexture(GL_TEXTURE_2D, mCharTexAtlas);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, totalWidth, maxHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
 	mAtlasWidth = totalWidth;
@@ -135,7 +165,7 @@ void Text::generateTextureAtlas(std::string fontName)
 		};
 
 		characterInfo[c - charOffset] = info;
-		std::cout << "characterInfo:";
+		/*std::cout << "characterInfo:";
 		std::cout << "width: " << characterInfo[c - charOffset].width << ", ";
 		std::cout << "height: " << characterInfo[c - charOffset].height << ", ";
 		std::cout << "OffsetX: " << characterInfo[c - charOffset].bearingX << ", ";
@@ -143,7 +173,7 @@ void Text::generateTextureAtlas(std::string fontName)
 		std::cout << "advanceX: " << characterInfo[c - charOffset].advanceX << ", ";
 		std::cout << "advanceY: " << characterInfo[c - charOffset].advanceY << ", ";
 		std::cout << "texXOffset: " << characterInfo[c - charOffset].texXOffset << ", ";
-		std::cout << "x is: " << static_cast<int>(x) << std::endl;
+		std::cout << "x is: " << static_cast<int>(x) << std::endl;*/
 		if (info.width > 0 && info.height > 0) {
 			/*glBindTexture(GL_TEXTURE_2D, mCharTexAtlas);
 			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);*/
@@ -159,20 +189,94 @@ void Text::generateTextureAtlas(std::string fontName)
 		x += info.width;
 	}
 
-	/*GLubyte* pixels = new GLubyte[1 * totalWidth * maxHeight]{};
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
-	stbi_write_bmp("textureAtlas.bmp", totalWidth, maxHeight, 1, pixels);*/
+	saveToFile();
 }
 
-void Text::load(std::string file)
+void Text::saveToFile()
+{
+	/// Print character atlas to file
+	// Allocate memory for pixel data
+	GLubyte* pixels = new GLubyte[4 * mAtlasWidth * mAtlasHeight]{};
+	
+	// Copy pixel data
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
+	// Save pixel data to file
+	stbi_write_bmp("Fonts\\fontAtlas.bmp", mAtlasWidth, mAtlasHeight, 1, pixels);
+
+	// Deallocate memory
+	delete pixels;
+
+
+	/// Save character data to file:
+	std::ofstream outf{ "Fonts\\fontData.dat", std::ios::out };
+	if (!outf) {
+		std::cout << "Could'nt write to Fonts/fontData.dat" << std::endl;
+		return;
+	}
+
+	// If other general information needs to be known about font atlas,
+	// it should go in the top of the file. Here.
+
+	outf << mFontName << std::endl;
+	
+	for (unsigned int i{ 0 }; i < 128 - charOffset; ++i) {
+		CharInfo info = characterInfo[i];
+		outf
+			<< info.width << " " << info.height << " "
+			<< info.bearingX << " " << info.bearingY << " "
+			<< info.advanceX << " " << info.advanceY << " "
+			<< info.texXOffset
+			<< std::endl;
+	}
+
+	outf.close();
+}
+
+void Text::readFromFile()
+{
+	/// Read character data:
+	std::ifstream inf{ "Fonts\\fontData.dat", std::ios::in };
+	if (!inf) {
+		std::cout << "Could'nt read file Fonts/fontData.dat" << std::endl;
+		return;
+	}
+
+	// Read in fontname from top of file
+	inf >> mFontName;
+
+	for (unsigned int i{ 0 }; i < 128 - charOffset && inf; ++i) {
+		CharInfo info;
+		inf >> info.width >> info.height >> info.bearingX >> info.bearingY >> info.advanceX >> info.advanceY >> info.texXOffset;
+		characterInfo[i] = info;
+	}
+
+	inf.close();
+
+	/// Read pixels
+	loadImage("Fonts\\fontAtlas.bmp");
+}
+
+void Text::loadImage(std::string file)
 {
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load(file.c_str(), &width, &height, &nrChannels, 0);
 
+	std::cout << std::hex;
+	for (unsigned int i{ 0 }; i < 50; ++i) {
+		std::cout << std::hex << +data[i] << " ";
+	}
+	std::cout << std::endl;
+
+
+	std::cout << "image channels: " << nrChannels << std::endl;
+
 	glBindTexture(GL_TEXTURE_2D, mCharTexAtlas);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
+
+	mAtlasWidth = width;
+	mAtlasHeight = height;
 
 	stbi_image_free(data);
 }
@@ -227,6 +331,21 @@ void Text::write(std::string text, GLfloat x, GLfloat y, GLfloat size)
 		x += (info.advanceX >> 6) * size; // Bitshift by 6 to get value in pixels (2^6 = 64)
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+bool compareChar(char& c1, char& c2)
+{
+	if (c1 == c2)
+		return true;
+	else if (std::toupper(c1) == std::toupper(c2))
+		return true;
+	return false;
+}
+
+bool Text::caseInSensStringCompare(std::string& str1, std::string& str2)
+{
+	return ((str1.size() == str2.size()) &&
+		std::equal(str1.begin(), str1.end(), str2.begin(), &compareChar));
 }
 
 void Text::loadCharacters(std::string fontName)

@@ -38,18 +38,31 @@ private:
 	static const GLuint charOffset{ 32 };
 	CharInfo characterInfo[128 - charOffset]{};
 
+	std::string mFontName;
+
 	std::map<GLchar, Character> Characters;
 	std::vector<Character> mCharacterList;
 	void loadCharacters(std::string fontName = "consola");
 	Material mMaterial{"text"};
 
-public:
-	Text();
-	void setTextColor(gsl::vec4 color);
 	void generateTextureAtlas(std::string fontName = "consola");
-	void load(std::string file);
+	void loadImage(std::string file);
+
+	void saveToFile();
+	void readFromFile();
+
+public:
+	Text (std::string font = "consola");
+	bool isFontInFile(std::string font);
+	void setTextColor(gsl::vec4 color);
 
 	void write(std::string text, GLfloat x, GLfloat y, GLfloat size = 1);
+
+	// Various helper functions
+	/*
+	 * Case Insensitive String Comparision
+	 */
+	static bool caseInSensStringCompare(std::string& str1, std::string& str2);
 };
 
 #endif
