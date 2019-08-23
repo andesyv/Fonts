@@ -206,13 +206,14 @@ void Text::write(std::string text, GLfloat x, GLfloat y, GLfloat size)
 		// std::cout << "UV start: " << info.texXOffset << ", UV stop: " << texXEnd << std::endl;
 		// Update VBO for each character
 		GLfloat vertices[6][4] = {
-			{ xpos,     ypos,		0.0, 0.0 },
-			{ xpos + w, ypos,       1.0, 0.0 },
-			{ xpos + w, ypos + h,   1.0, 1.0 },
+			// Note: Flipping y uv's to make up for that OpenGL uses it's y-axis on images reverse.
+			{ xpos,     ypos,		info.texXOffset, 1.0 },
+			{ xpos + w, ypos,       texXEnd, 1.0 },
+			{ xpos + w, ypos + h,   texXEnd, 0.0 },
 
-			{ xpos + w, ypos + h,   1.0, 1.0 },
-			{ xpos,		ypos + h,   0.0, 1.0 },
-			{ xpos,		ypos,		0.0, 0.0 }
+			{ xpos + w, ypos + h,   texXEnd, 0.0 },
+			{ xpos,		ypos + h,   info.texXOffset, 0.0 },
+			{ xpos,		ypos,		info.texXOffset, 1.0 }
 		};
 
 		// std::cout << "w is: " << w << ", and h is: " << h << std::endl;

@@ -209,7 +209,7 @@ int main()
 
 		// glUniform3fv(glGetUniformLocation(3, ""), 1, )
 		// std::cout << "FPS: " << calculateFramerate(renderTime + deltaTime) << std::endl;
-		coolText.write("word", 0, 0, 15);
+		coolText.write("longer word", 0, 0, 2);
 
 
 		// Use old debugging if debugger is disabled
