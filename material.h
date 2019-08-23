@@ -2,6 +2,7 @@
 #include "shader.h"
 #include "Math/vector2d.h"
 #include "Math/vector3d.h"
+#include "Math/vector4d.h"
 
 class Material
 {
@@ -26,7 +27,7 @@ public:
 
 	std::shared_ptr<Shader> mShader;
 	GLuint mTextureID{ 0 };
-	gsl::vec3 mColor{ 1.f, 1.f, 1.f };
+	gsl::vec4 mColor{ 1.f, 1.f, 1.f, 1.f };
 	float mAmbient{ 0.15f };
 	float mDiffuse{ 0.8f };
 	float mSpecular{ 0.4f };

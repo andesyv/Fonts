@@ -8,6 +8,7 @@
 #include "Math/math.h"
 #include "shader.h"
 #include "mesh.h"
+#include "text.h"
 
 // FreeType: Font building library
 #include <ft2build.h>
@@ -95,7 +96,7 @@ int main()
 		{ PROJECT_DIR + std::string{"Shaders\\default.frag" } }
 		}.setName("default")));
 	ShaderManager::get().add(std::move(Shader{
-		{ PROJECT_DIR + std::string{"Shaders\\default.vert"} },
+		{ PROJECT_DIR + std::string{"Shaders\\text.vert"} },
 		{ PROJECT_DIR + std::string{"Shaders\\text.frag"} }
 		}.setName("text")));
 
@@ -106,7 +107,12 @@ int main()
 
 	// Fonts
 	// ----------
-	loadCharacters();
+	// loadCharacters();
+	Text coolText{};
+	coolText.generateTextureAtlas();
+
+	//coolText.load({ PROJECT_DIR + std::string{"Textures\\hund.bmp" } });
+	
 
 
 
@@ -135,12 +141,12 @@ int main()
 	};
 
 	// Plane
-	gameObjects.push_back(std::make_shared<Mesh>(vertices, Material{ "text" }));
+	/*gameObjects.push_back(std::make_shared<Mesh>(vertices, Material{ "default" }));
 	gameObjects.back()->mDrawMode = GL_TRIANGLES;
-	gameObjects.back()->mMaterial.enableParams(Material::PARAM::TEXTURE | Material::PARAM::UVPOS | Material::PARAM::UVSCALE);
+	gameObjects.back()->mMaterial.enableParams(Material::PARAM::TEXTURE | Material::PARAM::UVPOS | Material::PARAM::UVSCALE);*/
 
 	struct comparitor {
-		bool operator() (const std::weak_ptr<Mesh>& a, const std::weak_ptr<Mesh>& b)
+		bool operator() (const std::weak_ptr<Mesh>& a, const std::weak_ptr<Mesh>& b) const
 		{
 			if (a.expired() || b.expired())
 				return false;
@@ -174,7 +180,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
  
-		// Draw all gameobjects
+		//// Draw all gameobjects
 		//for (const auto &ptr : sortedGameobjects) {
 		//	if (ptr.expired()) {
 		//		std::cout << "Skipped an item because it was expired!" << std::endl;
@@ -188,7 +194,7 @@ int main()
 		//	obj->draw();
 		//}
 
-		auto object = gameObjects.back();
+		/*auto object = gameObjects.back();
 		object->mMaterial.mTextureID = Characters['g'].TextureID;
 		object->mMaterial.mUVScale = gsl::vec2{2.f, 2.f};
 		object->mMaterial.mUVPos = gsl::vec2{ 0.f, 0.f};
@@ -199,10 +205,11 @@ int main()
 		object->mMaterial.mUVScale = gsl::vec2{ 2.f, 2.f };
 		object->mMaterial.mUVPos = gsl::vec2{ -1.f, 0.f };
 		object->mMaterial.use();
-		object->draw();
+		object->draw();*/
 
 		// glUniform3fv(glGetUniformLocation(3, ""), 1, )
 		// std::cout << "FPS: " << calculateFramerate(renderTime + deltaTime) << std::endl;
+		coolText.write("word", 0, 0, 15);
 
 
 		// Use old debugging if debugger is disabled

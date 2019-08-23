@@ -31,7 +31,7 @@ void Material::use()
 	if (mParams & static_cast<unsigned char>(PARAM::SPECULAR))
 		glUniform1f(glGetUniformLocation(shaderId, "specular"), mSpecular);
 	if (mParams & static_cast<unsigned char>(PARAM::COLOR))
-		glUniform3fv(glGetUniformLocation(shaderId, "color"), 1, mColor.xP());
+		glUniform4fv(glGetUniformLocation(shaderId, "color"), 1, mColor.xP());
 	if (mParams & static_cast<unsigned char>(PARAM::TEXTURE))
 		glBindTexture(GL_TEXTURE_2D, mTextureID);
 	if (mParams & static_cast<unsigned char>(PARAM::UVSCALE))
