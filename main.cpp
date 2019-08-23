@@ -5,6 +5,7 @@
 #include <set>
 #include <map>
 #include <chrono>
+#include <sstream>
 #include "Math/math.h"
 #include "shader.h"
 #include "mesh.h"
@@ -192,7 +193,9 @@ int main()
 
 		// glUniform3fv(glGetUniformLocation(3, ""), 1, )
 		// std::cout << "FPS: " << calculateFramerate(renderTime + deltaTime) << std::endl;
-		textRenderer.write("longer word", 0, 0, 2);
+		std::stringstream fps;
+		fps << calculateFramerate(renderTime + deltaTime);
+		textRenderer.write(fps.str(), 600, 500, 1);
 
 
 		// Use old debugging if debugger is disabled
@@ -314,5 +317,5 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severi
 
 float calculateFramerate(double deltaTime)
 {
-	return static_cast<float>(1.0 / deltaTime);
+	return std::roundf(static_cast<float>(1.0 / deltaTime));
 }

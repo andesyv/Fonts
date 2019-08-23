@@ -1,6 +1,5 @@
 #include "text.h"
 #include <iostream>
-#include <iomanip>
 #include <fstream>
 #include "Math/vector4d.h"
 
