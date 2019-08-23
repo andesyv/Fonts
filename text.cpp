@@ -56,11 +56,16 @@ Text::Text(std::string font)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+
+	// Saving or loading from file.
 	if (isFontInFile(font)) {
 		readFromFile();
 	} else {
 		generateTextureAtlas(font);
 	}
+
+	// Remember to unbind whatever was bound
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 bool Text::isFontInFile(std::string font)
@@ -121,32 +126,14 @@ void Text::generateTextureAtlas(std::string fontName)
 		totalWidth += face->glyph->bitmap.width;
 	}
 
-	/*int totalWidth{ 0 }, maxHeight{ 0 }, maxWidth{ 0 }, numChars{ 0 };
-	for (auto it = Characters.begin(); it != Characters.end(); it++) {
-		auto glyph = it->second;
-		++numChars;
-		maxHeight = (glyph.Height > maxHeight) ? glyph.Height : maxHeight;
-		maxWidth = (glyph.Width > maxWidth) ? glyph.Width : maxWidth;
-		totalWidth += glyph.Width;
-	}*/
-
 	glBindTexture(GL_TEXTURE_2D, mCharTexAtlas);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, totalWidth, maxHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
 	mAtlasWidth = totalWidth;
 	mAtlasHeight = maxHeight;
 
-	/*int x{ 0 };
-	for (auto it = mCharacterList.begin(); it != mCharacterList.end(); it++) {
-		
-		glTexSubImage2D(GL_TEXTURE_2D, 0, x, 0, it->Width, it->Height, GL_ALPHA, GL_UNSIGNED_BYTE, it->
-);
-
-		x += it->Width;
-	}*/
-
 	unsigned int x{ 0 };
-	for (char c{ charOffset }; c < /*127*/127; c++) {
+	for (char c{ charOffset }; c < 127; c++) {
 		// Load character glyph 
 		if (FT_Load_Char(face, c, FT_LOAD_RENDER))
 		{
@@ -165,29 +152,14 @@ void Text::generateTextureAtlas(std::string fontName)
 		};
 
 		characterInfo[c - charOffset] = info;
-		/*std::cout << "characterInfo:";
-		std::cout << "width: " << characterInfo[c - charOffset].width << ", ";
-		std::cout << "height: " << characterInfo[c - charOffset].height << ", ";
-		std::cout << "OffsetX: " << characterInfo[c - charOffset].bearingX << ", ";
-		std::cout << "OffsetY: " << characterInfo[c - charOffset].bearingY << ", ";
-		std::cout << "advanceX: " << characterInfo[c - charOffset].advanceX << ", ";
-		std::cout << "advanceY: " << characterInfo[c - charOffset].advanceY << ", ";
-		std::cout << "texXOffset: " << characterInfo[c - charOffset].texXOffset << ", ";
-		std::cout << "x is: " << static_cast<int>(x) << std::endl;*/
-		if (info.width > 0 && info.height > 0) {
-			/*glBindTexture(GL_TEXTURE_2D, mCharTexAtlas);
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);*/
+		if (info.width > 0 && info.height > 0)
 			glTexSubImage2D(GL_TEXTURE_2D, 0, x, 0, info.width, info.height, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
-			// glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, info.width, info.height, 0, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
-			// glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, info.width, info.height, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
-			/*std::string filename{ "Textures\\"};
-			filename.append(1, c);
-			filename.append(".bmp");
-			stbi_write_bmp(filename.c_str(), info.width, info.height, 1, face->glyph->bitmap.buffer);*/
-		}
 
 		x += info.width;
 	}
+
+	// Generate mipmaps
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	saveToFile();
 }
@@ -261,15 +233,6 @@ void Text::loadImage(std::string file)
 	int width, height, nrChannels;
 	unsigned char* data = stbi_load(file.c_str(), &width, &height, &nrChannels, 0);
 
-	std::cout << std::hex;
-	for (unsigned int i{ 0 }; i < 50; ++i) {
-		std::cout << std::hex << +data[i] << " ";
-	}
-	std::cout << std::endl;
-
-
-	std::cout << "image channels: " << nrChannels << std::endl;
-
 	glBindTexture(GL_TEXTURE_2D, mCharTexAtlas);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -307,7 +270,6 @@ void Text::write(std::string text, GLfloat x, GLfloat y, GLfloat size)
 		h /= 600;
 
 		auto texXEnd = info.texXOffset + info.width / static_cast<float>(mAtlasWidth);
-		// std::cout << "UV start: " << info.texXOffset << ", UV stop: " << texXEnd << std::endl;
 		// Update VBO for each character
 		GLfloat vertices[6][4] = {
 			// Note: Flipping y uv's to make up for that OpenGL uses it's y-axis on images reverse.
@@ -319,8 +281,6 @@ void Text::write(std::string text, GLfloat x, GLfloat y, GLfloat size)
 			{ xpos,		ypos + h,   info.texXOffset, 0.0 },
 			{ xpos,		ypos,		info.texXOffset, 1.0 }
 		};
-
-		// std::cout << "w is: " << w << ", and h is: " << h << std::endl;
 
 		// Update content of VBO memory
 		glBindBuffer(GL_ARRAY_BUFFER, mVBO);
@@ -346,70 +306,4 @@ bool Text::caseInSensStringCompare(std::string& str1, std::string& str2)
 {
 	return ((str1.size() == str2.size()) &&
 		std::equal(str1.begin(), str1.end(), str2.begin(), &compareChar));
-}
-
-void Text::loadCharacters(std::string fontName)
-{
-	std::string fontPath{ "Fonts/" + fontName + ".ttf" };
-
-	FT_Library ft;
-	if (FT_Init_FreeType(&ft))
-		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
-
-	FT_Face face;
-	if (FT_New_Face(ft, fontPath.c_str(), 0, &face))
-		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
-
-	// Font size
-	FT_Set_Pixel_Sizes(face, 0, 48);
-
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Disable byte-alignment restriction
-
-	mCharacterList.reserve(127 - 32);
-	for (char c = 32; c < 127; c++)
-	{
-		// Load character glyph 
-		if (FT_Load_Char(face, c, FT_LOAD_RENDER))
-		{
-			std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
-			continue;
-		}
-		// Generate texture
-		GLuint texture;
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			GL_RED,
-			face->glyph->bitmap.width,
-			face->glyph->bitmap.rows,
-			0,
-			GL_RED,
-			GL_UNSIGNED_BYTE,
-			face->glyph->bitmap.buffer
-		);
-		// Set texture options
-		gsl::vec4 borderColor{ 0.f, 0.f, 0.f, 1.f };
-		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor.xP());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		// Now store character for later use
-		Character character = {
-			texture,
-			face->glyph->bitmap.width,
-			face->glyph->bitmap.rows,
-			face->glyph->bitmap_left,
-			face->glyph->bitmap_top,
-			face->glyph->advance.x
-		};
-		Characters.insert(std::pair<GLchar, Character>(c, character));
-		mCharacterList.push_back(character);
-	}
-
-	FT_Done_Face(face);
-	FT_Done_FreeType(ft);
 }
